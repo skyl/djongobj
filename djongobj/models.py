@@ -83,10 +83,11 @@ class Document(object):
         return self.d().iteritems()
 
     def _get_pop_command(self, key):
-        return SON({
-            'findandmodify': self._meta['collection'],
-            'update': {'$unset': {key: 1}}
-        })
+        return SON([
+            ('findandmodify', self._meta['collection']),
+            ('query', {'_id': self.pk}),
+            ('update', {'$unset': {key: 1}}),
+        ])
 
 
     def pop(self, key, default=None):
