@@ -7,7 +7,8 @@ from pymongo.son import SON
 
 class Document(object):
 
-    def __init__(self, instance, owner, db, collection, _id, host='localhost', port=27017):
+    def __init__(self, db, collection, _id, host='localhost', port=27017, instance=None, owner=None):
+
         self._meta = {'db': db, 'collection': collection, 'host': host, 'port': port}
         self.pk = _id
         self._collection = get_collection(db, collection, host, port)
@@ -138,12 +139,12 @@ class Document(object):
 
 class Collection(object):
 
-    def __init__(self, instance, owner, db, collection, host='localhost', port=27017):
+    def __init__(self, db, collection, host='localhost', port=27017, instance=None, owner=None):
         self._meta = {'db': db, 'collection': collection, 'host': host, 'port': port}
         self._collection = get_collection(db, collection, host, port)
+        self._db = get_db(db, host, port)
         self._instance = instance
         self._owner = owner
-        self._db = get_db(db, host, port)
 
     def __repr__(self):
         return u'%s, %s' % (type(self), repr(self._meta))
@@ -160,6 +161,7 @@ class Collection(object):
             return self._collection.find(kwargs)
 
         # turn the list of dicts into a list of ids eg [2, 5, 6] if return_type is queryset
+        # must have an owner class when instantiated
         if return_type == 'queryset':
             mongo_ids = [x['_id'] for x in self._collection.find(kwargs, {'_id': 1}).sort('_id')]
             return self._owner.objects.filter(pk__in=mongo_ids)
@@ -168,7 +170,19 @@ class Collection(object):
             raise NotImplementedError, 'hrm ..'
 
     def update(self, spec, doc, **kwargs):
-        '''simple wrapper around http://www.mongodb.org/display/DOCS/Updating'''
+        '''simple wrapper around http://www.mongodb.org/display/DOCS/Updating
+
+        ``doc`` can be in the form::
+
+            {
+                '$inc': {'field': 1, 'other': 10},
+                '$set': {'foofield': value},
+                '$unset': ...,
+                '$push':
+            }
+
+        '''
+
         return self._collection.update(spec, doc, **kwargs)
 
     def upsert_one(self, attrs):
@@ -214,6 +228,7 @@ def get_document(db, collection, _id, host='localhost', port=27017):
 class Mongo(object):
     def __init__(self, db=None, collection=None, host='localhost', port=27017,
             document_class=Document, collection_class=Collection):
+
         self._db = db
         self._collection = collection
         self._host = host
@@ -222,13 +237,17 @@ class Mongo(object):
         self._coll = collection_class
 
     def __get__(self, instance, owner):
-        if instance:
-            return self._doc(instance, owner, self._db or instance._meta.app_label,
-                            self._collection or instance._meta.module_name,
-                            instance.pk, self._host, self._port)
 
-        return self._coll(instance, owner, self._db or owner._meta.app_label,
+        if instance:
+
+            return self._doc(self._db or instance._meta.app_label,
+                            self._collection or instance._meta.module_name,
+                            instance.pk, self._host, self._port,
+                            instance=instance, owner=owner)
+
+        return self._coll(self._db or owner._meta.app_label,
                             self._collection or owner._meta.module_name,
-                            self._host, self._port)
+                            self._host, self._port,
+                            instance=instance, owner=owner)
 
 
