@@ -4,10 +4,19 @@ Djongobj
 
 An abstraction atop PyMongo for working with Django pythonically (or so we hope).
 
+
+Requirements
+------------
+
+I'm developing with mongodb 1.4.3 and pymongo 1.6.
+Lesser versions will not work.
+Django is not necesarily required but is assumed here (1.2+)
+
+
 Installation
 ------------
 
-Put Djongobj on your path in your favored way.
+Put djongobj on your path in your favored way.
 
 Usage
 -----
@@ -89,7 +98,7 @@ Input is welcome!
 
 The pk field for SQL database and our collection are the same::
 
-    >>> b = Blog.objects.get(id=1) # get and object.
+    >>> b = Blog.objects.get(id=1) # get an object.
     >>> b.mongo
     {u'_id': 1, u'bar': u'baz'}
     >>> b.mongo['foo'] = 'the next bar'

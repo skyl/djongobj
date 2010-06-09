@@ -1,13 +1,16 @@
 from pymongo import Connection, ASCENDING, DESCENDING
 from pymongo.son import SON
 
-# PyMongo
-# http://api.mongodb.org/python/1.6%2B/index.html
-
+from djongobj import HOST, PORT
 
 class Document(object):
+    '''A dictionary-like object that eagerly interacts with the database
 
-    def __init__(self, db, collection, _id, host='localhost', port=27017, instance=None, owner=None):
+    Appears on model instances when using the Mongo descriptor.
+    Can also be instantiated on it's own with db, collection, _id args.
+    '''
+
+    def __init__(self, db, collection, _id, host=HOST, port=PORT, instance=None, owner=None):
 
         self._meta = {'db': db, 'collection': collection, 'host': host, 'port': port}
         self.pk = _id
@@ -137,10 +140,9 @@ class Document(object):
         self._update(d)
 
 
-
 class Collection(object):
 
-    def __init__(self, db, collection, host='localhost', port=27017, instance=None, owner=None):
+    def __init__(self, db, collection, host=HOST, port=PORT, instance=None, owner=None):
         self._meta = {'db': db, 'collection': collection, 'host': host, 'port': port}
         self._collection = get_collection(db, collection, host, port)
         self._db = get_db(db, host, port)
@@ -170,6 +172,23 @@ class Collection(object):
         if return_type == 'documents':
             raise NotImplementedError, 'hrm ..'
 
+    def insert(doc_s, manipulate=True, safe=False, check_keys=True):
+        '''doc_s is a document (SON/dict) or list of docs
+
+        Careful, we are using the pk fields as the _id,
+        if not given an _id explicitly, one will be created (and returned)
+        if you want to retrieve these documents, you must handle the _id fields manually
+        http://api.mongodb.org/python/1.6%2B/api/pymongo/collection.html#pymongo.collection.Collection.insert
+        '''
+        return self._collection.insert(doc_s, manipulate, safe, check_keys)
+
+    def upsert_one(self, attrs):
+        '''insert if no _id, else upserti
+
+        this is actually `save` in mongo
+        http://api.mongodb.org/python/1.6%2B/api/pymongo/collection.html#pymongo.collection.Collection.save'''
+        return self._collection.save(attrs)
+
     def update(self, spec, doc, **kwargs):
         '''simple wrapper around http://www.mongodb.org/display/DOCS/Updating
 
@@ -182,13 +201,21 @@ class Collection(object):
                 '$push':
             }
 
+        see also:
+        http://api.mongodb.org/python/1.6%2B/api/pymongo/collection.html#pymongo.collection.Collection.update
         '''
 
         return self._collection.update(spec, doc, **kwargs)
 
-    def upsert_one(self, attrs):
-        '''insert if no _id, else upsert'''
-        return self._collection.save(attrs)
+    def remove(spec, safe=False, confirm=False):
+        '''
+
+        http://api.mongodb.org/python/1.6%2B/api/pymongo/collection.html#pymongo.collection.Collection.remove
+        '''
+        if not spec and not confirm:
+            raise Exception, "If you really want to delete all of documents in this collection, pass `confirm=True`"
+        else:
+            self._collection.remove(spec, safe)
 
     def update_one(self, _id, attrs):
         '''Updates the document with _id in the collection with attrs'''
