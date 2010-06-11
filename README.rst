@@ -1,4 +1,3 @@
-
 Djongobj
 ========
 
@@ -20,6 +19,26 @@ Put djongobj on your path in your favored way.
 
 Usage
 -----
+
+You can address a Document with a db, collection, and unique id (optionally host and port).
+``djongobj.models.Document`` acts like a dictionary.  Each operation eagerly interacts with the db.
+
+::
+
+    from djongobj.models import Document
+    d = Document('content', 'blog', 1)
+
+A collection can be addressed with the db name and the collection name.
+A ``djongobj.models.Collection`` is a lightly-wrapped ``pymongo.collection.Collection``.
+
+::
+
+    from djongobj.models import Collection
+    c = Collection('content', 'blog')
+
+
+With Django
+-----------
 
 A simple way to use the module is to add an instance of Mongo to your normal Django class::
 

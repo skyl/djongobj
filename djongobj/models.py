@@ -139,8 +139,19 @@ class Document(object):
         d = {'$%s' % op: {key: value}}
         self._update(d)
 
+    def write_to_sql(self):
+        pass
+
+    def write_from_sql(self):
+        '''Write all the fields from sql to mongo, plus look through all relations to write
+
+        related object's fields to this Document'''
+
+        pass
+
 
 class Collection(object):
+    '''A lightly wrapped pymongo.collection.Collection'''
 
     def __init__(self, db, collection, host=HOST, port=PORT, instance=None, owner=None):
         self._meta = {'db': db, 'collection': collection, 'host': host, 'port': port}
@@ -172,7 +183,7 @@ class Collection(object):
         if return_type == 'documents':
             raise NotImplementedError, 'hrm ..'
 
-    def insert(doc_s, manipulate=True, safe=False, check_keys=True):
+    def insert(self, doc_s, manipulate=True, safe=False, check_keys=True):
         '''doc_s is a document (SON/dict) or list of docs
 
         Careful, we are using the pk fields as the _id,
@@ -207,7 +218,7 @@ class Collection(object):
 
         return self._collection.update(spec, doc, **kwargs)
 
-    def remove(spec, safe=False, confirm=False):
+    def remove(self, spec, safe=False, confirm=False):
         '''
 
         http://api.mongodb.org/python/1.6%2B/api/pymongo/collection.html#pymongo.collection.Collection.remove
